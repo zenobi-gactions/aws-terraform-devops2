@@ -2,26 +2,28 @@ output "vpc_id" {
   value = aws_vpc.vpc.id
 }
 
-output "public_subnet_ids" {
-  value = [for s in aws_subnet.public_subnet : s.id]
+output "public_subnet_id" {
+  value = aws_subnet.public_subnet.id
 }
 
-output "private_subnet_ids" {
-  value = [for s in aws_subnet.private_subnet : s.id]
+output "private_subnet_id" {
+  value = aws_subnet.private_subnet.id
 }
 
-output "public_network_interface_ids" {
-  value = [for ni in aws_network_interface.public : ni.id]
+output "network_interface_id" {
+  value = aws_network_interface.public.id
 }
 
 output "security_group_id" {
   value = aws_security_group.cluster.id
 }
 
+
+
 # output "aws_network_interface" {
 #   value = aws_network_interface.public.id
 # }
 
-output "aws_network_interface_ids" {
-  value = aws_network_interface.public[*].id
-}
+# output "network_interface_ids" {
+#   value = aws_network_interface.public[*].id
+# }

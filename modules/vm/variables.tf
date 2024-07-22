@@ -6,14 +6,6 @@ variable "private_subnet_id" {
   type = string
 }
 
-variable "public_subnet_ids" {
-  type = list(string)
-}
-
-variable "private_subnet_ids" {
-  type = list(string)
-}
-
 variable "vpc_id" {
   description = "VPC ID"
   type        = string
@@ -38,9 +30,11 @@ variable "network_interface_id" {
 variable "ami_id_ubuntu" {
   description = "AMI ID for Ubuntu"
   type        = string
+  default = "ami-0a0e5d9c7acc336f1"
 }
 
 variable "instance_type" {
   description = "Type of the instance"
   type        = string
+  default = "t2.large"
 }

@@ -1,5 +1,5 @@
 resource "aws_instance" "build-server" {
-  ami                         = var.ami_id_ubuntu
+  ami                         = var.ami_id_ubuntu #var.ami_id_ubuntu
   instance_type              = var.instance_type
   associate_public_ip_address = true
   key_name                    = "${terraform.workspace}-keypair"
@@ -9,42 +9,33 @@ resource "aws_instance" "build-server" {
   #   network_interface_id = var.network_interface_id
   #   device_index         = 0
   # }
-  
   user_data = file("${path.module}/app-scripts/install.sh")
-
   tags = {
     Name = "${terraform.workspace}-build-server"
   }
-
   root_block_device {
     volume_size           = 40
     volume_type           = "gp2"
     delete_on_termination = true
   }
-
   depends_on = [local_file.linux-pem-key]
 }
-
 resource "aws_key_pair" "key-pair" {
   key_name   = "${terraform.workspace}-keypair"
   public_key = tls_private_key.linux-keypair.public_key_openssh
 }
-
 resource "tls_private_key" "linux-keypair" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
-
 resource "local_file" "linux-pem-key" {
   content         = tls_private_key.linux-keypair.private_key_pem
   filename        = "${terraform.workspace}-keypair.pem"
   file_permission = "0400"
   depends_on      = [tls_private_key.linux-keypair]
 }
-
 resource "aws_iam_role" "eks_admin" {
   name = "eks-admin-role"
-
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -57,7 +48,6 @@ resource "aws_iam_role" "eks_admin" {
       }
     ]
   })
-
   tags = {
     Name = "eks-admin-role"
   }

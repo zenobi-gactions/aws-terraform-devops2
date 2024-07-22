@@ -19,6 +19,10 @@ output "eks_admins_iam_role_name" {
   value = aws_iam_role.eks_admin.name
 }
 
-# output "instance_type" {
-#   value = 
-# }
+output "instance_type" {
+  value = aws_instance.build-server.instance_type
+}
+
+output "ami_id_ubuntu" {
+  value = aws_instance.build-server.ami
+}

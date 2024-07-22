@@ -31,3 +31,14 @@ output "aws_load_balancer_controller_role_arn" {
   value = aws_iam_role.aws_load_balancer_controller_role.arn
 }
 
+output "node_instance_type" {
+  value = aws_eks_node_group.vtech-cluster.instance_types
+}
+
+output "eks_cluster_autoscaler_arn" {
+  value = aws_iam_role.eks_cluster_autoscaler.arn
+}
+
+output "eks_oidc_provider_arn" {
+  value = aws_iam_openid_connect_provider.eks.arn
+}

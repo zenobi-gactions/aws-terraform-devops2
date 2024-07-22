@@ -3,15 +3,29 @@ variable "aws_region" {
   type        = string
 }
 
-variable "subnet_ids" {
-  description = "A list of subnet IDs for the EKS cluster"
-  type        = list(string)
+# variable "subnet_ids" {
+#   description = "A list of subnet IDs for the EKS cluster"
+#   type        = list(string)
+# }
+
+variable "public_subnet_id" {
+  type = string
 }
 
-variable "instance_type" {
-  description = "The type of instance to be created"
+variable "private_subnet_id" {
+  type = string
+}
+
+variable "node_instance_type" {
+  description = "The instance type for the EKS node group."
   type        = string
-  default     = "t3.medium"
+  default     = "t2.medium"
+}
+
+variable "node_capacity_type" {
+  description = "The node type for the EKS node group."
+  type        = string
+  default     = "ON_DEMAND"
 }
 
 variable "node_group_desired_size" {
