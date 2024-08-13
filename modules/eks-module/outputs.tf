@@ -1,44 +1,43 @@
+# Output the EKS cluster details
 output "eks_cluster_id" {
   description = "The ID of the EKS cluster"
-  value       = aws_eks_cluster.vtech-cluster.id
+  value       = module.eks.cluster_id
 }
 
 output "eks_cluster_endpoint" {
   description = "The endpoint for the EKS cluster"
-  value       = aws_eks_cluster.vtech-cluster.endpoint
+  value       = module.eks.cluster_endpoint
 }
 
 output "eks_cluster_arn" {
   description = "The ARN of the EKS cluster"
-  value       = aws_eks_cluster.vtech-cluster.arn
+  value       = module.eks.cluster_arn
 }
 
 output "eks_cluster_name" {
   description = "The name of the EKS cluster"
-  value       = aws_eks_cluster.vtech-cluster.name
+  value       = module.eks.cluster_name
 }
 
+# Removing or adjusting the node group ID output if not available
 output "eks_node_group_id" {
   description = "The ID of the EKS node group"
-  value       = aws_eks_node_group.vtech-cluster.id
+  value       = module.eks.eks_managed_node_groups["public_nodes"]
 }
 
-output "cluster_id" {
-  value = aws_eks_cluster.vtech-cluster.id
+# Removing or adjusting the instance type output if not available
+output "node_instance_type" {
+  value = module.eks.eks_managed_node_groups["public_nodes"]
 }
 
 output "aws_load_balancer_controller_role_arn" {
   value = aws_iam_role.aws_load_balancer_controller_role.arn
 }
 
-output "node_instance_type" {
-  value = aws_eks_node_group.vtech-cluster.instance_types
-}
-
 output "eks_cluster_autoscaler_arn" {
   value = aws_iam_role.eks_cluster_autoscaler.arn
 }
 
-output "eks_oidc_provider_arn" {
-  value = aws_iam_openid_connect_provider.eks.arn
+output "oidc_issuer_url" {
+  value = module.eks.cluster_oidc_issuer_url
 }

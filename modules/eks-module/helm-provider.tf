@@ -2,13 +2,43 @@ provider "aws" {
   region = var.aws_region
 }
 
+data "aws_eks_cluster" "eks_cluster" {
+  name = module.eks.cluster_name
+
+  depends_on = [
+    module.eks
+  ]
+}
+
+data "aws_eks_cluster_auth" "eks_cluster_auth" {
+  name = module.eks.cluster_name
+
+  depends_on = [
+    module.eks
+  ]
+}
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.eks_cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.eks_cluster_auth.token
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = data.aws_eks_cluster.eks_cluster.endpoint
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority[0].data)
+    token                  = data.aws_eks_cluster_auth.eks_cluster_auth.token
+  }
+}
+
 # EKS Cluster Autoscaler Helm Release
 resource "helm_release" "cluster_autoscaler" {
-  name       = "${terraform.workspace}-vtech-cluster-autoscaler"
+  name       = "${var.cluster_name}-cluster-autoscaler"
   repository = "https://kubernetes.github.io/autoscaler"
   chart      = "cluster-autoscaler"
-  version    = "9.10.7"
-  namespace = "kube-system"
+ # version    = "9.13.0" # Example version, ensure compatibility with your k8s version
+  namespace  = "kube-system"
   values = [
     yamlencode({
       rbac = {
@@ -21,13 +51,12 @@ resource "helm_release" "cluster_autoscaler" {
       }
     })
   ]
-
-  depends_on = [aws_eks_node_group.vtech-cluster]
+  depends_on = [module.eks]  # Updated dependency to wait for the EKS module
 }
 
 # IAM Role for AWS Load Balancer Controller
 resource "aws_iam_role" "aws_load_balancer_controller_role" {
-  name = "${terraform.workspace}-vtech-eks-load-balancer-controller-role"
+  name = "${var.cluster_name}-eks-load-balancer-controller-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -44,7 +73,7 @@ resource "aws_iam_role" "aws_load_balancer_controller_role" {
 
 # Helm release for AWS Load Balancer Controller
 resource "helm_release" "aws_load_balancer_controller" {
-  name       = "${terraform.workspace}-eks-load-balancer-controller"
+  name       = "aws-load-balancer-controller"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
   namespace  = "kube-system"
@@ -55,27 +84,15 @@ resource "helm_release" "aws_load_balancer_controller" {
   }
   set {
     name  = "clusterName"
-    value = aws_eks_cluster.vtech-cluster.name
+    value = module.eks.cluster_name  # Updated reference
   }
   set {
     name  = "serviceAccount.name"
-    value = "${terraform.workspace}-aws-load-balancer-controller"
+    value = "${var.cluster_name}-aws-load-balancer-controller"
   }
   set {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = aws_iam_role.aws_load_balancer_controller_role.arn
   }
-    depends_on = [aws_eks_cluster.vtech-cluster]
-}
-
-provider "kubernetes" {
-  host                   = module.eks.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  token                  = data.aws_eks_cluster_auth.cluster.token
-}
-data "aws_eks_cluster" "cluster" {
-  name = aws_eks_cluster.vtech-cluster.name
-}
-data "aws_eks_cluster_auth" "cluster" {
-  name = aws_eks_cluster.vtech-cluster.name
+  # depends_on = [eks_managed_node_groups.public_nodes]
 }

@@ -4,6 +4,7 @@ variable "public_subnet_id" {
 
 variable "private_subnet_id" {
   type = string
+  default = "module.network-module.private_subnet_ids[0]"
 }
 
 variable "vpc_id" {
@@ -36,5 +37,10 @@ variable "ami_id_ubuntu" {
 variable "instance_type" {
   description = "Type of the instance"
   type        = string
-  default = "t2.large"
+  default = "t3.large"
+}
+
+variable "name" {
+  type = string
+  default = "dml-demo"
 }

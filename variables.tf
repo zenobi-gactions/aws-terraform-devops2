@@ -1,9 +1,32 @@
+variable "public_subnet_cidr" {
+  description = "CIDR blocks for public subnets"
+  type        = list(string)
+  default = ["10.0.1.0/24", "10.0.2.0/24"]
+}
+
+variable "private_subnet_cidr" {
+  description = "CIDR blocks for private subnets"
+  type        = list(string)
+  default = ["10.0.3.0/24", "10.0.4.0/24"]
+}
+
 variable "aws_region" {
   description = "The AWS region to deploy to"
   type        = string
   default     = "us-east-1"
 }
 
+variable "vpc_name" {
+  description = "VPC Name to deploy to"
+  type        = string
+  default     = "dml-vpc"
+}
+
+variable "vpc_cidr_block" {
+  description = "VPC CIDR Block ID"
+  type        = string
+  default     = "10.0.0.0/16"
+}
 variable "aws_instance_id" {
   description = "AWS Instance ID"
   type        = string
@@ -19,20 +42,25 @@ variable "public_subnet_id" {
 variable "network_interface_id" {
   description = "Network Interface ID"
   type        = string
-  default     = "module.network.network_interface_id"
+  default     = "module.network-module.network_interface_id"
 }
 
-# variable "instance_type" {
-#   description = "Type of the instance"
-#   type        = string
-#   default = "t2.large"
-# }
+variable "cluster_name" {
+  type    = string
+  default = "dml"
+}
 
-# variable "ami_id_ubuntu" {
-#   description = "AMI ID for Ubuntu"
-#   type        = string
-#   default     = "ami-0a0e5d9c7acc336f1"
-# }
+variable "vpc_id" {
+  description = "The ID of the VPC"
+  type        = string
+  default     = "aws_vpc.vpc.id"
+}
+
+variable "availability_zones" {
+  description = "VPC Availability Zones"
+  type = list(string)
+  default = ["us-east-1a", "us-east-1b"]
+}
 
 variable "node_group_desired_size" {
   description = "Desired size of the node group"
@@ -51,3 +79,4 @@ variable "node_group_max_size" {
   type        = number
   default     = 3
 }
+

@@ -1,31 +1,26 @@
 # IAM Policy and Role
-resource "aws_iam_openid_connect_provider" "eks" {
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = ["9e99a48a9960b14926bb7f3b9b9e3ec4f35e1f60"]  # AWS-provided thumbprint for OIDC
-  url             = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
-}
+
 
 data "aws_iam_policy_document" "eks_cluster_autoscaler_assume_role_policy" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
-    effect  = "Allow"
 
     condition {
       test     = "StringEquals"
-      variable = "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub"
+      variable = "oidc.eks.us-east-1.amazonaws.com/id/8F553EEE47D0AB57B050785D3937A975:sub"
       values   = ["system:serviceaccount:kube-system:cluster-autoscaler"]
     }
 
     principals {
-      identifiers = [aws_iam_openid_connect_provider.eks.arn]
       type        = "Federated"
+      identifiers = ["arn:aws:iam::461086874723:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/8F553EEE47D0AB57B050785D3937A975"]
     }
   }
 }
 
 resource "aws_iam_role" "eks_cluster_autoscaler" {
   assume_role_policy = data.aws_iam_policy_document.eks_cluster_autoscaler_assume_role_policy.json
-  name               = "${terraform.workspace}-vtech-cluster-autoscaler-role"
+  name               = "${var.cluster_name}-cluster-autoscaler-role"
 }
 
 resource "aws_iam_policy" "eks_cluster_autoscaler" {

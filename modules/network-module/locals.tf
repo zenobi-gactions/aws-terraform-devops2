@@ -1,26 +1,12 @@
 locals {
-  # CIDR blocks and other configurations
-  cidr_blocks = {
-    stage   = "10.0.0.0/16"
-    prod    = "10.1.0.0/16"
-    default = "10.2.0.0/16"
-  }
+  # Unified VPC Configuration
+  vpc_name       = var.vpc_name
+  cidr_block     = var.vpc_cidr_block  # Single CIDR block for the VPC
 
-  public_subnet_cidr = {
-    stage = "10.0.1.0/24"
-    prod  = "10.1.1.0/24"
-  }
+  public_subnet_cidr  = var.vpc_public_subnets  # List of CIDR blocks for public subnets
+  private_subnet_cidr = var.vpc_private_subnets  # List of CIDR blocks for private subnets
 
-  private_subnet_cidr = {
-    stage = "10.0.2.0/24"
-    prod  = "10.1.2.0/24"
-  }
-
-  availability_zones = {
-    stage   =  "us-east-1a"     # ["us-east-1a", "us-east-1b"]
-    prod    =  "us-east-1b"     # ["us-east-1a", "us-east-1b"]
-  #  default = ["us-east-1a", "us-east-1b"]
-  }
+  availability_zones = ["us-east-1a", "us-east-1b"]  # Use two availability zones
 
   # Security group rules
   security_group_rules = [
@@ -67,11 +53,4 @@ locals {
       cidr_blocks = ["0.0.0.0/0"]
     }
   ]
-
-  # Subnet IDs for the public and private subnets
-  public_subnet_ids = aws_subnet.public_subnet.id
-  private_subnet_ids = aws_subnet.private_subnet.id
-
-  # Network interface IDs
-  public_network_interface_ids = aws_network_interface.public.id
 }
