@@ -12,7 +12,7 @@ variable "vpc_id" {
 variable "my_ip_address" {
   description = "Your IP address with a /32 subnet mask"
   type        = string
-  default     = "146.85.138.40/32"
+  default     = "146.85.139.194/32"
 }
 
 variable "public_subnet_id" {

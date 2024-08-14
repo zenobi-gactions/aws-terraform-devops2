@@ -57,6 +57,7 @@ resource "helm_release" "argo_cd" {
   }
 
   depends_on = [
+    module.eks,
     kubernetes_namespace.argocd
   ]
 }
