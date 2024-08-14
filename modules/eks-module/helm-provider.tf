@@ -19,6 +19,7 @@ data "aws_eks_cluster_auth" "eks_cluster_auth" {
 }
 
 provider "kubernetes" {
+  config_path = "~/.kube/config"
   host                   = data.aws_eks_cluster.eks_cluster.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks_cluster.certificate_authority[0].data)
   token                  = data.aws_eks_cluster_auth.eks_cluster_auth.token
@@ -94,5 +95,5 @@ resource "helm_release" "aws_load_balancer_controller" {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = aws_iam_role.aws_load_balancer_controller_role.arn
   }
-  # depends_on = [eks_managed_node_groups.public_nodes]
+  depends_on = [module.eks]
 }

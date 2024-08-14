@@ -2,7 +2,7 @@ resource "aws_instance" "build-server" {
   ami                         = var.ami_id_ubuntu #var.ami_id_ubuntu
   instance_type               = var.instance_type
   associate_public_ip_address = true
-  key_name                    = "${var.name}-keypair"
+  key_name                    = "${var.linux-keypair}-keypair"
   vpc_security_group_ids      = [var.security_group_id]
   subnet_id                   = var.public_subnet_id  # Single public subnet ID
   user_data = file("${path.module}/app-scripts/install.sh")
@@ -17,7 +17,7 @@ resource "aws_instance" "build-server" {
   depends_on = [local_file.linux-pem-key]
 }
 resource "aws_key_pair" "key-pair" {
-  key_name   = "${var.name}-keypair"
+  key_name   = "${var.linux-keypair}-keypair"
   public_key = tls_private_key.linux-keypair.public_key_openssh
 }
 resource "tls_private_key" "linux-keypair" {
@@ -26,7 +26,7 @@ resource "tls_private_key" "linux-keypair" {
 }
 resource "local_file" "linux-pem-key" {
   content         = tls_private_key.linux-keypair.private_key_pem
-  filename        = "${var.name}-keypair.pem"
+  filename        = "${var.linux-keypair}-keypair.pem"
   file_permission = "0400"
   depends_on      = [tls_private_key.linux-keypair]
 }

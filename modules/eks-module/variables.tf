@@ -6,6 +6,7 @@ variable "aws_region" {
 variable "vpc_id" {
   description = "The ID of the VPC"
   type        = string
+  default = "module.network-module.vpc_id"
 }
 # variable "subnet_ids" {
 #   description = "A list of subnet IDs for the EKS cluster"
@@ -15,16 +16,20 @@ variable "vpc_id" {
 variable "public_subnet_ids" {
   description = "List of public subnet IDs"
   type        = list(string)
+  default = [ "module.network-module.public_subnet_ids" ]
 }
 
 variable "private_subnet_ids" {
   description = "List of private subnet IDs"
   type        = list(string)
+    default = [ "module.network-module.private_subnet_ids" ]
+
 }
 
 variable "security_group_id" {
   description = "Security group ID for EKS"
   type        = string
+  default = "module.network-module.security_group_id"
 }
 
 variable "node_instance_type" {
@@ -88,3 +93,9 @@ variable "cluster_endpoint_public_access_cidrs" {
   type        = list(string)
   default     = ["0.0.0.0/0"]
 }
+
+# variable "kube-namespace" {
+#   description = "Kubernetes namespace to deploy the AWS Load Balancer Controller into."
+#   type        = string
+#   default     = "kube-system"
+# }

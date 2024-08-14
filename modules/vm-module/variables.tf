@@ -44,3 +44,8 @@ variable "name" {
   type = string
   default = "dml-demo"
 }
+
+variable "linux-keypair" {
+  type = string
+  default = "linux-key"
+}
