@@ -1,4 +1,5 @@
 # IAM Role for EKS Cluster
+# This role is assumed by the EKS control plane to manage the cluster.
 resource "aws_iam_role" "eks_cluster" {
   name = "${var.cluster_name}-eks-cluster-role"
   assume_role_policy = jsonencode({
@@ -18,18 +19,84 @@ resource "aws_iam_role" "eks_cluster" {
   }
 }
 
-# IAM Role Policy Attachments for Cluster
+# Attach AmazonEKSClusterPolicy to the EKS cluster IAM role.
 resource "aws_iam_role_policy_attachment" "eks_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
   role       = aws_iam_role.eks_cluster.name
 }
-# AmazonEKSVPCResourceController policy is critical for EKS to manage VPC resources.
+
+# Attach AmazonEKSVPCResourceController policy to the EKS cluster IAM role.
+# This policy allows the EKS cluster to manage VPC resources like security groups.
 resource "aws_iam_role_policy_attachment" "eks_AmazonEKSVPCResourceController" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
   role       = aws_iam_role.eks_cluster.name
 }
 
+
+# Attach policy to allow EBS volume management by nodes.
+# This policy is attached to the EKS node IAM role to allow the nodes to interact with EBS volumes.
+# Attach the EKSNodesEBSManagement policy to the single IAM role
+resource "aws_iam_role_policy" "eks_nodes_ebs_managed_policy" {
+  name   = "EKSNodesEBSManagement"
+  role   = module.eks.eks_managed_node_groups["public_nodes"].iam_role_name
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2:CreateVolume",
+          "ec2:AttachVolume",
+          "ec2:DeleteVolume",
+          "ec2:DetachVolume",
+          "ec2:ModifyVolume",
+          "ec2:DescribeVolumeStatus",
+          "ec2:DescribeVolumes",
+          "ec2:DescribeVolumeAttribute",
+          "ec2:DescribeInstances",
+          "ec2:DescribeAvailabilityZones",
+          "ec2:DescribeTags",
+          "ec2:CreateTags",
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Attach EKSNodesEBSManagement policy to the stateful node group role
+resource "aws_iam_role_policy" "eks_nodes_ebs_policy_stateful_nodes" {
+  name   = "EKSNodesEBSManagement"
+  role   = module.eks.eks_managed_node_groups["stateful_nodes"].iam_role_name
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2:CreateVolume",
+          "ec2:AttachVolume",
+          "ec2:DeleteVolume",
+          "ec2:DetachVolume",
+          "ec2:ModifyVolume",
+          "ec2:DescribeVolumeStatus",
+          "ec2:DescribeVolumes",
+          "ec2:DescribeVolumeAttribute",
+          "ec2:DescribeInstances",                
+          "ec2:DescribeAvailabilityZones",
+          "ec2:DescribeTags",
+          "ec2:CreateTags" 
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+
+
 # EKS Node Group IAM Role
+# This role is assumed by the EC2 instances in your EKS node groups.
 resource "aws_iam_role" "eks_nodes" {
   name = "${var.cluster_name}-eks-nodes-role"
   assume_role_policy = jsonencode({
@@ -46,30 +113,72 @@ resource "aws_iam_role" "eks_nodes" {
   })
 }
 
-# IAM policy attachment to nodegroup
+# Attach AmazonEKSWorkerNodePolicy to the EKS node IAM role.
 resource "aws_iam_role_policy_attachment" "eks_nodes_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.eks_nodes.name
 }
 
+# Attach AmazonEKS_CNI_Policy to the EKS node IAM role.
+# This policy is required for the CNI (Container Network Interface) plugin to manage network interfaces.
 resource "aws_iam_role_policy_attachment" "eks_cni_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   role       = aws_iam_role.eks_nodes.name
 }
 
+# Attach AmazonEC2ContainerRegistryReadOnly policy to the EKS node IAM role.
+# This policy allows the nodes to pull images from ECR (Elastic Container Registry).
 resource "aws_iam_role_policy_attachment" "eks_registry_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.eks_nodes.name
 }
-################################
-# Associate IAM Policy to IAM Role
+
+# Attach custom EBS CSI policy to the EKS node IAM role.
+resource "aws_iam_role_policy_attachment" "ebs_csi_policy_attachment" {
+  # policy_arn = aws_iam_policy.ebs_csi_policy.arn
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+  role       = aws_iam_role.eks_nodes.name
+}
+
+# Create the IAM Policy for the EBS CSI driver
+# This policy allows the EBS CSI driver to manage EBS volumes.
+resource "aws_iam_policy" "ebs_csi_policy" {
+  name   = "AmazonEBSCSIDriverPolicy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2:CreateSnapshot",
+          "ec2:AttachVolume",
+          "ec2:DetachVolume",
+          "ec2:DeleteSnapshot",
+          "ec2:DescribeSnapshots",
+          "ec2:DescribeVolumes",
+          "ec2:DescribeVolumeStatus",
+          "ec2:DescribeVolumeAttribute",
+          "ec2:ModifyVolume",
+          "ec2:CreateVolume",
+          "ec2:AttachVolume",
+          "ec2:DeleteVolume",
+          "ec2:DescribeVolumes",
+          
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Attach AmazonEKSClusterPolicy to the EKS nodes IAM role.
 resource "aws_iam_role_policy_attachment" "eks-AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
   role       = aws_iam_role.eks_nodes.name
 }
-################################
 
 # Admin Role for Managing EKS
+# This role is used by an IAM user to manage the EKS cluster.
 resource "aws_iam_role" "eks_admin_role" {
   name = "eks_admin_role"
   assume_role_policy = jsonencode({
@@ -87,6 +196,7 @@ resource "aws_iam_role" "eks_admin_role" {
 }
 
 # Fetch the certificate thumbprint for the OIDC provider
+# The OIDC provider is used for IAM Roles for Service Accounts (IRSA).
 data "tls_certificate" "oidc_cert" {
   url = data.aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer
 }
@@ -100,84 +210,120 @@ output "oidc_url" {
   value = data.aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer
 }
 
-# Create the IAM Policy for the EBS CSI driver
-resource "aws_iam_policy" "ebs_csi_policy" {
-  name   = "AmazonEBSCSIDriverPolicy"
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "ec2:CreateSnapshot",
-          "ec2:AttachVolume",
-          "ec2:DetachVolume",
-          "ec2:DeleteSnapshot",
-          "ec2:DescribeSnapshots",
-          "ec2:DescribeVolumes",
-          "ec2:DescribeVolumeStatus",
-          "ec2:DescribeVolumeAttribute",
-          "ec2:ModifyVolume"
-        ],
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-# Attach the IAM Policy to the Role
-
-################################################################
-
-
+# Attach AmazonEKSClusterPolicy to the EKS admin role.
 resource "aws_iam_role_policy_attachment" "eks_admin_policy" {
   role       = aws_iam_role.eks_admin_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
+# Attach AmazonEKS_CNI_Policy to the EKS admin role.
 resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
   role       = aws_iam_role.eks_admin_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }
 
-resource "kubernetes_cluster_role" "eks_admin" {
-  metadata {
-    name = "eks-admin"
-  }
+# Module for creating the admin-user with all necessary IAM roles and policies
+# This module creates an IAM user named "admin-user".
+module "admin_user_iam_user" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-user"
+  version = "5.3.1"
 
-  rule {
-    api_groups = [""]
-    resources  = ["pods", "services", "endpoints", "namespaces"]
-    verbs      = ["get", "list", "watch"]
-  }
+  name                          = "admin-user"
+  create_iam_access_key         = false
+  create_iam_user_login_profile = false
 
-  rule {
-    api_groups = ["apps"]
-    resources  = ["deployments", "statefulsets", "replicasets"]
-    verbs      = ["get", "list", "watch", "create", "update", "delete"]
-  }
-
-  rule {
-    api_groups = ["rbac.authorization.k8s.io"]
-    resources  = ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
-    verbs      = ["get", "list", "watch", "create", "update", "delete"]
-  }
+  force_destroy = true
 }
 
-resource "kubernetes_cluster_role_binding" "eks_admin_binding" {
-  metadata {
-    name = "eks-admin-binding"
-  }
+# Module for creating the EKS Admin IAM role
+# This module creates an IAM role that can be assumed by IAM users for managing the EKS cluster.
+module "eks_admins_iam_role" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
+  version = "5.3.1"
 
-  role_ref {
-    kind      = "ClusterRole"
-    name      = kubernetes_cluster_role.eks_admin.metadata[0].name
-    api_group = "rbac.authorization.k8s.io"
-  }
+  role_name         = "eks-admin"
+  create_role       = true
+  role_requires_mfa = false
 
-  subject {
-    kind      = "User"
-    name      = "arn:aws:iam::${var.aws_account_id}:user/${var.aws_account_name}"
-    api_group = "rbac.authorization.k8s.io"
-  }
+  custom_role_policy_arns = [module.allow_eks_access_iam_policy.arn]
+
+  trusted_role_arns = [
+    "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+  ]
+}
+
+data "aws_caller_identity" "current" {}
+
+# IAM Policy to allow access to EKS and related services
+# This module creates an IAM policy that grants permissions to manage EKS and related services.
+module "allow_eks_access_iam_policy" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "5.3.1"
+
+  name          = "allow-eks-access"
+  create_policy = true
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [ 
+          "iam:ListRoles",
+          "eks:*",
+          "ssm:GetParameter"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+# IAM Policy to allow assuming the EKS Admin role
+# This module creates an IAM policy that allows users to assume the EKS Admin role.
+module "allow_assume_eks_admins_iam_policy" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "5.3.1"
+
+  name          = "allow-assume-eks-admin-iam-role"
+  create_policy = true
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "sts:AssumeRole",
+        ]
+        Effect   = "Allow"
+        Resource = "${module.eks_admins_iam_role.iam_role_arn}"
+      },
+    ]
+  })
+}
+
+# IAM Group for EKS Admins
+# This module creates an IAM group for EKS admins and attaches the necessary policies.
+module "eks_admins_iam_group" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-group-with-policies"
+  version = "5.3.1"
+  name                              = "eks-admins-group"
+  attach_iam_self_management_policy = false
+  create_group                      = true
+  group_users                       = [
+    module.admin_user_iam_user.iam_user_name, 
+    data.aws_iam_user.existing_admin_user.user_name
+  ]
+  custom_group_policy_arns          = [module.allow_assume_eks_admins_iam_policy.arn]
+}
+
+# Ensure the existing "admin" user is added to the same IAM group
+# This resource manages the membership of users in the EKS admins group.
+resource "aws_iam_group_membership" "admin_group_membership" {
+  name  = "admin_group_membership"
+  group = module.eks_admins_iam_group.group_name
+  users = [
+    data.aws_iam_user.existing_admin_user.user_name,
+    module.admin_user_iam_user.iam_user_name
+  ]
 }

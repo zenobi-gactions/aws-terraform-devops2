@@ -41,3 +41,22 @@ output "eks_cluster_autoscaler_arn" {
 output "oidc_issuer_url" {
   value = module.eks.cluster_oidc_issuer_url
 }
+
+ output "prometheus_helm_metadata" {
+  description = "Metadata Block outlining status of the deployed release."
+  value       = helm_release.prometheus.status
+}
+
+output "grafana_helm_metadata" {
+  description = "Metadata Block outlining status of the deployed release."
+  value       = helm_release.grafana.metadata
+}
+
+output "argo_cd_helm_metadata" {
+  description = "Metadata Block outlining status of the deployed release."
+  value       = helm_release.argo_cd.metadata
+}
+
+output "eks_nodes_role_arn" {
+  value = aws_iam_role.eks_nodes.arn
+}

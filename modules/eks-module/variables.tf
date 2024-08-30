@@ -94,8 +94,28 @@ variable "cluster_endpoint_public_access_cidrs" {
   default     = ["0.0.0.0/0"]
 }
 
+variable "kubeconfig_path" {
+  description = "Path to the kubeconfig file."
+  type        = string
+  default     = "~/.kube/config"
+}
+
 # variable "kube-namespace" {
 #   description = "Kubernetes namespace to deploy the AWS Load Balancer Controller into."
 #   type        = string
 #   default     = "kube-system"
 # }
+
+variable "grafana_admin_password" {
+  description = "Admin password for Grafana."
+  type        = string
+  default     = "password"
+}
+
+variable "eks_managed_node_group_defaults" {
+  type = object({
+    ami_type  = string
+    disk_size = number
+    iam_role_arn = string  # Ensure this is declared as a string
+  })
+}

@@ -1,0 +1,152 @@
+adminPassword: "password"
+replicas: 1
+
+image:
+  repository: grafana/grafana
+  tag: 9.5.2  # Ensure this version is compatible with your Helm chart version
+  pullPolicy: IfNotPresent
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: prometheus-k8s
+        type: prometheus
+        url: http://prometheus-k8s.monitoring.svc:9090
+        access: proxy
+        isDefault: true
+
+plugins:
+  - grafana-piechart-panel
+
+sidecar:
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    folder: /tmp/dashboards
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "250m"
+
+persistence:
+  enabled: true
+  storageClassName: "ebs-sc"
+  accessModes:
+    - ReadWriteOnce
+  size: 8Gi
+
+
+# datasources:
+#   datasources.yaml:
+#     apiVersion: 1
+#     datasources:
+#     - name: Prometheus
+#       type: prometheus
+#       url: http://prometheus-server.monitoring.svc.cluster.local
+#       access: proxy
+#       isDefault: true
+
+# plugins:
+#   - grafana-piechart-panel
+
+# rbac:
+#   create: true
+#   pspEnabled: true
+
+# serviceAccount:
+#   create: true
+#   name: grafana
+
+# replicas: 1
+
+# deploymentStrategy: 
+#   type: RollingUpdate
+#   rollingUpdate:
+#     maxUnavailable: 1
+
+# sidecar:
+#   dashboards:
+#     enabled: true
+#     label: grafana_dashboard
+#     folder: /var/lib/grafana/dashboards
+#     searchNamespace: ALL
+#   configMap:
+#     name: grafana-dashboards
+  
+# readinessProbe:
+#   httpGet:
+#     path: /
+#     port: 3000
+#   initialDelaySeconds: 120
+#   timeoutSeconds: 10
+#   periodSeconds: 10
+#   failureThreshold: 6
+
+# database:
+#   type: "mysql"
+#   host: "mysql.monitoring.svc.cluster.local:3306"
+#   name: "grafana"
+#   user: "grafana"
+#   password: "admin123"
+
+# livenessProbe:
+#   httpGet:
+#     path: /api/health
+#     port: 3000
+#   initialDelaySeconds: 120
+#   timeoutSeconds: 10
+#   periodSeconds: 10
+#   failureThreshold: 10
+
+# resources:
+#   requests:
+#     memory: "256Mi"
+#     cpu: "250m"
+#   limits:
+#     memory: "512Mi"
+#     cpu: "500m"
+
+# image:
+#   repository: grafana/grafana
+#   tag: 11.1.4
+#   pullPolicy: IfNotPresent
+
+# securityContext:
+#   runAsUser: 472
+#   fsGroup: 472
+
+# service:
+#   type: LoadBalancer
+#   port: 80
+#   labels:
+#     app.kubernetes.io/instance: grafana
+#     app.kubernetes.io/name: grafana
+
+# adminUser: admin
+# adminPassword: password
+
+# persistence:
+#   enabled: true
+#   storageClassName: "ebs-sc"
+#   accessModes:
+#     - ReadWriteOnce
+#   size: 8Gi
+
+# extraInitContainers:
+#   - name: grafanadb-clone-and-replace
+#     image: keinos/sqlite3
+#     command:
+#       - "/bin/sh"
+#       - "-c"
+#       - "/usr/bin/sqlite3 /var/lib/grafana/grafana.db '.clone /var/lib/grafana/grafana.db.clone'; mv /var/lib/grafana/grafana.db.clone /var/lib/grafana/grafana.db; chmod a+w /var/lib/grafana/grafana.db"
+#     imagePullPolicy: IfNotPresent
+#     securityContext:
+#       runAsUser: 0
+#     volumeMounts:
+#       - name: storage
+#         mountPath: "/var/lib/grafana"

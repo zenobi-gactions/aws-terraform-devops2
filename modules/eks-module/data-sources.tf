@@ -19,3 +19,7 @@ data "aws_ami" "eks" {
   owners = ["602401143452"] # Amazon EKS AMI owner ID
 }
 
+# Reference the existing admin IAM user without creating it
+data "aws_iam_user" "existing_admin_user" {
+  user_name = "admin"
+}
