@@ -32,7 +32,9 @@ resource "helm_release" "argo_cd" {
   # }
   depends_on = [
     module.eks,
-    kubernetes_namespace.argocd
+    kubernetes_namespace.argocd,
+    # aws_lb.argocd,
+    # aws_route53_record.argocd
   ]
 }
 

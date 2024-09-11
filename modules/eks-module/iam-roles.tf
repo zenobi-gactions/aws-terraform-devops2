@@ -64,36 +64,34 @@ resource "aws_iam_role_policy" "eks_nodes_ebs_managed_policy" {
   })
 }
 
-# Attach EKSNodesEBSManagement policy to the stateful node group role
-resource "aws_iam_role_policy" "eks_nodes_ebs_policy_stateful_nodes" {
-  name   = "EKSNodesEBSManagement"
-  role   = module.eks.eks_managed_node_groups["stateful_nodes"].iam_role_name
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "ec2:CreateVolume",
-          "ec2:AttachVolume",
-          "ec2:DeleteVolume",
-          "ec2:DetachVolume",
-          "ec2:ModifyVolume",
-          "ec2:DescribeVolumeStatus",
-          "ec2:DescribeVolumes",
-          "ec2:DescribeVolumeAttribute",
-          "ec2:DescribeInstances",                
-          "ec2:DescribeAvailabilityZones",
-          "ec2:DescribeTags",
-          "ec2:CreateTags" 
-        ],
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-
+# # Attach EKSNodesEBSManagement policy to the stateful node group role
+# resource "aws_iam_role_policy" "eks_nodes_ebs_policy_stateful_nodes" {
+#   name   = "EKSNodesEBSManagement"
+#   role   = module.eks.eks_managed_node_groups["stateful_nodes"].iam_role_name
+#   policy = jsonencode({
+#     Version = "2012-10-17",
+#     Statement = [
+#       {
+#         Effect = "Allow",
+#         Action = [
+#           "ec2:CreateVolume",
+#           "ec2:AttachVolume",
+#           "ec2:DeleteVolume",
+#           "ec2:DetachVolume",
+#           "ec2:ModifyVolume",
+#           "ec2:DescribeVolumeStatus",
+#           "ec2:DescribeVolumes",
+#           "ec2:DescribeVolumeAttribute",
+#           "ec2:DescribeInstances",                
+#           "ec2:DescribeAvailabilityZones",
+#           "ec2:DescribeTags",
+#           "ec2:CreateTags" 
+#         ],
+#         Resource = "*"
+#       }
+#     ]
+#   })
+# }
 
 # EKS Node Group IAM Role
 # This role is assumed by the EC2 instances in your EKS node groups.
@@ -326,4 +324,94 @@ resource "aws_iam_group_membership" "admin_group_membership" {
     data.aws_iam_user.existing_admin_user.user_name,
     module.admin_user_iam_user.iam_user_name
   ]
+}
+
+
+# resource "kubernetes_config_map" "aws_auth" {
+#   metadata {
+#     name      = "aws-auth"
+#     namespace = "kube-system"
+#   }
+
+#   data = {
+#     mapRoles = <<YAML
+#     - rolearn: arn:aws:iam::${var.aws_account_id}:role/${var.iam_role_name}
+#       username: ${var.iam_username}
+#       groups:
+#         - system:masters
+#     YAML
+#   }
+
+#   lifecycle {
+#     ignore_changes = [
+#       data["mapRoles"],
+#       data["mapUsers"]
+#     ]
+#   }
+# }
+####################
+resource "kubectl_manifest" "patch_aws_auth" {
+  provider = kubectl
+
+  yaml_body = <<YAML
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
+data:
+  mapRoles: |
+    - rolearn: arn:aws:iam::${var.aws_account_id}:role/${var.iam_role_name}
+      username: ${var.iam_username}
+      groups:
+        - system:masters
+YAML
+}
+terraform {
+  required_providers {
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = ">= 1.14.0"
+    }
+  }
+}
+provider "kubectl" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.eks_cluster_auth.name
+}
+# data "aws_eks_cluster" "eks_cluster" {
+#   name = module.eks.cluster_name
+# }
+
+# data "aws_eks_cluster_auth" "eks_cluster_auth" {
+#   name = module.eks.cluster_name
+# }
+# ####################
+
+resource "aws_iam_policy" "eks_access_policy" {
+  name        = "EKSAccessPolicy"
+  description = "Policy for EKS Cluster access"
+
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "eks:DescribeCluster",
+        "eks:ListClusters",
+        "eks:AccessKubernetesApi"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+POLICY
+}
+
+resource "aws_iam_role_policy_attachment" "eks_access_policy_attachment" {
+  role       = aws_iam_role.eks_cluster.name
+  policy_arn = aws_iam_policy.eks_access_policy.arn
 }

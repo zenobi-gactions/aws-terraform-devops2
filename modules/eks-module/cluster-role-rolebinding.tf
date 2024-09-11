@@ -11,6 +11,12 @@ resource "kubernetes_cluster_role" "eks_admin" {
   }
 
   rule {
+    api_groups = [""]
+    resources  = ["*"]
+    verbs      = ["*"]
+  }
+
+  rule {
     api_groups = ["apps"]
     resources  = ["deployments", "statefulsets", "replicasets"]
     verbs      = ["get", "list", "watch", "create", "update", "delete"]

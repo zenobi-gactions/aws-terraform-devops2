@@ -34,28 +34,27 @@ module "eks" {
       }
     }
     
-    stateful_nodes = {
-      name               = "stateful-node-group"
-      instance_types     = ["m5.large"]
-      desired_size       = 1
-      min_size           = 1
-      max_size           = 3
-      capacity_type      = "ON_DEMAND"
-      subnet_ids         = var.public_subnet_ids
-      security_group_ids = [var.security_group_id]
-      key_name           = "eks-terraform-key"
-      iam_role_arn       = aws_iam_role.eks_nodes.arn
-      labels = {
-        role = "stateful"
-      }
-    }
+    # stateful_nodes = {
+    #   name               = "stateful-node-group"
+    #   instance_types     = ["m5.large"]
+    #   desired_size       = 1
+    #   min_size           = 1
+    #   max_size           = 3
+    #   capacity_type      = "ON_DEMAND"
+    #   subnet_ids         = var.public_subnet_ids
+    #   security_group_ids = [var.security_group_id]
+    #   key_name           = "eks-terraform-key"
+    #   iam_role_arn       = aws_iam_role.eks_nodes.arn
+    #   labels = {
+    #     role = "stateful"
+    #   }
+    # }
   }
 
   tags = {
     Environment = "dev"
   }
 }
-
 
 
 

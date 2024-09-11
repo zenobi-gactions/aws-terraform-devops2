@@ -43,6 +43,11 @@ resource "helm_release" "grafana" {
     })
   ]
   set {
+    name  = "service.type"
+    value = "LoadBalancer"
+  }
+
+  set {
     name  = "persistence.storageClassName"
     value = "ebs-sc"
   }
@@ -140,15 +145,12 @@ resource "helm_release" "grafana" {
     name  = "testFramework.enabled"
     value = "false"
   }
-
-  set {
-    name  = "service.type"
-    value = "LoadBalancer"
-  }
   
   depends_on = [
     kubernetes_namespace.monitoring,
-    null_resource.pre_helm_delay, 
+    null_resource.pre_helm_delay,
+    # aws_lb.grafana,
+    # aws_route53_record.grafana,
   ]
 }
 
@@ -282,7 +284,8 @@ locals {
     }
   ]
 }
-################################################################
+
+
 
 
 # # other dashboard

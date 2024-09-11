@@ -66,7 +66,7 @@ variable "node_group_min_size" {
 variable "aws_account_id" {
   description = "AWS User Account ID"
   type        = string
-  default     = "461086874723"
+  default     = "778805653184"
 }
 
 # AWS Account Name
@@ -118,4 +118,14 @@ variable "eks_managed_node_group_defaults" {
     disk_size = number
     iam_role_arn = string  # Ensure this is declared as a string
   })
+}
+
+variable "iam_username" {
+  type = string
+  default = "admin"
+}
+
+variable "iam_role_name" {
+  type = string
+  default = "eks_user_role"
 }

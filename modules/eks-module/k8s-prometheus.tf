@@ -22,10 +22,10 @@ resource "helm_release" "prometheus" {
     name  = "server.persistentVolume.enabled"
     value = "false"
   }
-  # set {
-  #   name  = "server.service.type"
-  #   value = "LoadBalancer"
-  # }
+  set {
+    name  = "server.service.type"
+    value = "ClusterIP"
+  }
   set {
     name = "server\\.resources"
     value = yamlencode({
