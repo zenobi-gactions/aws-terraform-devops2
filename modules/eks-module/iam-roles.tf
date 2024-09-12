@@ -11,6 +11,18 @@ resource "aws_iam_role" "eks_cluster" {
           Service = "eks.amazonaws.com"
         },
         Action = "sts:AssumeRole"
+      },
+      {
+        Effect = "Allow",
+        Principal = {
+          Federated = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${data.aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer}"
+        },
+        Action = "sts:AssumeRoleWithWebIdentity",
+        Condition = {
+          StringEquals = {
+            "oidc.eks.${var.aws_region}.amazonaws.com/id/${data.aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer}:sub": "system:serviceaccount:kube-system:${var.business_division}-aws-load-balancer-controller"
+          }
+        }
       }
     ]
   })
@@ -378,7 +390,12 @@ terraform {
 provider "kubectl" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  token                  = data.aws_eks_cluster_auth.eks_cluster_auth.name
+  # token                  = data.aws_eks_cluster_auth.eks_cluster_auth.name
+  exec {
+    api_version = "client.authentication.k8s.io/v1alpha1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+  }
 }
 # data "aws_eks_cluster" "eks_cluster" {
 #   name = module.eks.cluster_name
@@ -414,4 +431,13 @@ POLICY
 resource "aws_iam_role_policy_attachment" "eks_access_policy_attachment" {
   role       = aws_iam_role.eks_cluster.name
   policy_arn = aws_iam_policy.eks_access_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "eks_nodes_ssm_policy_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  role       = aws_iam_role.eks_nodes.name
+}
+resource "aws_iam_role_policy_attachment" "eks_service_policy_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+  role       = aws_iam_role.eks_cluster.name
 }

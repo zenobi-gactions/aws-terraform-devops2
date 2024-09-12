@@ -114,10 +114,10 @@ variable "environment" {
 variable "aws_account_id" {
   description = "AWS User Account ID"
   type        = string
-  default     = "461086874723"
+  default     = "778805653184"
 }
 
-variable "business_divsion" {
+variable "business_division" {
   description = "Business Division in the large organization this Infrastructure belongs"
   type        = string
   default     = "dml"

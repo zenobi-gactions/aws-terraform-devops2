@@ -13,6 +13,11 @@ variable "vpc_id" {
 #   type        = list(string)
 # }
 
+variable "business_division" {
+  description = "Business Division in the large organization this Infrastructure belongs"
+  type        = string
+  default     = "dml"
+}
 variable "public_subnet_ids" {
   description = "List of public subnet IDs"
   type        = list(string)

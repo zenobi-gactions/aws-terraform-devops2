@@ -12,7 +12,7 @@ data "aws_iam_policy_document" "eks_cluster_autoscaler_assume_role_policy" {
 
     principals {
       type        = "Federated"
-      identifiers = ["arn:aws:iam::461086874723:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/8F553EEE47D0AB57B050785D3937A975"]
+      identifiers = ["arn:aws:iam::${var.aws_account_id}:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/8F553EEE47D0AB57B050785D3937A975"] # ["arn:aws:iam::461086874723:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/8F553EEE47D0AB57B050785D3937A975"] # 
     }
   }
 }

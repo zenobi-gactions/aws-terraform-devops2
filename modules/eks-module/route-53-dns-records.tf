@@ -207,7 +207,7 @@
 #       "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
 #       "alb.ingress.kubernetes.io/target-type"      = "ip"
 #       "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{"HTTP": 80}, {"HTTPS": 443}])
-#       "alb.ingress.kubernetes.io/certificate-arn"  = "arn:aws:acm:us-east-1:461086874723:certificate/cdbe801b-e440-4bf7-a69e-71345ea35b4c"
+#       "alb.ingress.kubernetes.io/certificate-arn"  = "arn:aws:acm:us-east-1:${var.account_id}:certificate/cdbe801b-e440-4bf7-a69e-71345ea35b4c"
 #     }
 #   }
 
@@ -243,7 +243,7 @@
 #       "alb.ingress.kubernetes.io/target-type"      = "ip"
 #       "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
 #       "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{"HTTP": 80}, {"HTTPS": 443}])
-#       "alb.ingress.kubernetes.io/certificate-arn"  = "arn:aws:acm:us-east-1:461086874723:certificate/cdbe801b-e440-4bf7-a69e-71345ea35b4c"# data.aws_acm_certificate.andynze_cert.arn
+#       "alb.ingress.kubernetes.io/certificate-arn"  = "arn:aws:acm:us-east-1:${var.account_id}:certificate/cdbe801b-e440-4bf7-a69e-71345ea35b4c"# data.aws_acm_certificate.andynze_cert.arn
 #     }
 #   }
 
