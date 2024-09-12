@@ -169,6 +169,7 @@ resource "kubernetes_config_map" "grafana-dashboards" {
   data = {
     "${each.value.file}" = file("${path.root}/modules/eks-module/grafana-dashboard/${each.value.file}")
   }
+  depends_on = [ kubernetes_namespace.monitoring, ]
 }
 
 # Define a list of dashboards

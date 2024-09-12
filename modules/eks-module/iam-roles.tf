@@ -378,6 +378,10 @@ data:
       groups:
         - system:masters
 YAML
+  depends_on = [
+      aws_iam_role.eks_nodes,         # Ensure the IAM role is created first
+      module.eks                      # Ensure the EKS cluster is fully created
+    ]
 }
 terraform {
   required_providers {
@@ -441,3 +445,4 @@ resource "aws_iam_role_policy_attachment" "eks_service_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
   role       = aws_iam_role.eks_cluster.name
 }
+
