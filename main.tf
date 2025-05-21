@@ -3,7 +3,7 @@ locals {
   env = terraform.workspace
 }
 
-# Network Module
+## Network Module
 module "network-module" {
   source               = "./modules/network-module"
   aws_region           = var.aws_region
@@ -17,7 +17,7 @@ module "network-module" {
   private_subnet_cidr  = var.private_subnet_cidr # ["10.0.3.0/24", "10.0.4.0/24"]
 }
 
-# VM Module
+## VM Module
 module "vm-module" {
   source               = "./modules/vm-module"
   public_subnet_id     = module.network-module.public_subnet_ids[0]  # Get the first subnet
@@ -27,8 +27,8 @@ module "vm-module" {
   network_interface_id = var.network_interface_id
   aws_instance_id      = var.aws_instance_id
 }
-
-# EKS Module
+### EKS-Cluster Requirement  --- Below 
+## EKS Module
 module "eks-module" {
   source                  = "./modules/eks-module"
   aws_region              = var.aws_region
@@ -50,3 +50,4 @@ module "eks-module" {
   # }
 }
 
+### EKS-Cluster Requirement  --- Above 

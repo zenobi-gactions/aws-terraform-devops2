@@ -4,7 +4,7 @@ module "eks" {
   version = "20.8.5"
   
   cluster_name    = "dml-eks-cluster"
-  cluster_version = "1.30"
+  cluster_version = "1.32"
   vpc_id          = var.vpc_id
   subnet_ids      = var.private_subnet_ids
   cluster_endpoint_public_access           = var.cluster_endpoint_public_access
