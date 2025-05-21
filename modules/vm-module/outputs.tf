@@ -26,3 +26,4 @@ output "instance_type" {
 output "ami_id_ubuntu" {
   value = aws_instance.build-server.ami
 }
+

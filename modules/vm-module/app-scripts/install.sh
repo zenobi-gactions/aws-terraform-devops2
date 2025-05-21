@@ -1,88 +1,100 @@
 #!/bin/bash
+
+# Ensure non-interactive apt to avoid hanging in automation
+# export DEBIAN_FRONTEND=noninteractive
+
+echo "🔧 Updating system..."
+sudo apt update -y 
+sudo apt upgrade -y
+
+echo "🖥️ Setting hostname..."
 sudo hostnamectl set-hostname jenkins-server
-sudo apt update
-sudo apt install unzip wget openjdk-11-jdk openjdk-17-jdk -y
 
-# Install Jenkins
-wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc
-echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
-sudo apt update
-sleep 10
+echo "📦 Installing base packages..."
+sudo apt install -y unzip wget curl git jq gnupg lsb-release fontconfig software-properties-common \
+                    openjdk-11-jdk openjdk-17-jdk nodejs npm maven apt-transport-https ca-certificates
+
+echo "☕ Verifying Java version..."
 /usr/bin/java --version
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
-sudo apt update
-sudo apt-get install jenkins -y
-sudo systemctl start jenkins
-# sudo systemctl status jenkins
 
-sudo apt install maven curl fontconfig npm -y
-sudo apt update
-
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
+echo "🔧 Installing AWS CLI..."
+curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip -q awscliv2.zip
 sudo ./aws/install
+rm -rf aws awscliv2.zip
 
-# Add Docker's official GPG key:
-sudo apt-get update
-sudo apt-get install ca-certificates curl -y
+echo "🔐 Adding Jenkins APT repo..."
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | \
+  sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt update -y
+sudo apt install -y jenkins
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+
+echo "🛡️ Installing OWASP ZAP..."
+wget -q https://github.com/zaproxy/zaproxy/releases/download/v2.16.1/ZAP_2_16_1_unix.sh
+sudo chmod +x ZAP_2_16_1_unix.sh
+sudo ./ZAP_2_16_1_unix.sh -q
+rm ZAP_2_16_1_unix.sh
+
+echo "🐳 Installing Docker..."
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-# Add the repository to Apt sources:
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+  https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-sudo apt-get update
+# ✅ Create docker group if it doesn't exist
+sudo groupadd -f docker
 
-##Install Docker and Run SonarQube as Container
-sudo apt-get update
-# sudo apt install docker.io docker-ce docker-compose -y
-sudo apt-get install docker-ce docker-ce-cli docker-compose containerd.io docker-buildx-plugin docker-compose-plugin -y
-sudo usermod -aG docker ubuntu 
-sudo usermod -aG docker jenkins  
+# ✅ Create docker, groups and start 
+sudo apt update -y
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
+sudo usermod -aG docker ubuntu
+sudo usermod -aG docker jenkins
 sudo usermod -aG docker $USER
-newgrp docker
 sudo chmod 777 /var/run/docker.sock
-bash
+# sudo systemctl enable docker
+#sudo systemctl start docker
 
-# docker run -d --name sonar -p 9000:9000 sonarqube:lts-community
-# docker run -d -p 8081:8081 --name nexus sonatype/nexus3
+echo "🔍 Installing Trivy..."
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | \
+  sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb \
+  $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
+sudo apt update -y
+sudo apt install -y trivy
+trivy --version
 
-#install trivy
-sudo apt-get install wget apt-transport-https gnupg lsb-release -y
-wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-sudo apt-get update
-sudo apt-get install trivy -y
+echo "🧪 Installing Snyk CLI..."
+wget -q https://github.com/snyk/snyk/releases/latest/download/snyk-linux
+sudo chmod +x snyk-linux
+sudo mv snyk-linux /usr/local/bin/snyk
+snyk --version
 
-# Install Kubectl
-sudo apt update
-curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl
+echo "📦 Installing kubectl..."
+curl -sLO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 kubectl version --client
+rm kubectl
 
-# Install  eksctl
-curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-cd /tmp
-sudo mv /tmp/eksctl /bin
+echo "📦 Installing eksctl..."
+curl -sL "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+sudo mv /tmp/eksctl /usr/local/bin/eksctl
 eksctl version
 
-# Install helm
+echo "📦 Installing Helm..."
 curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
 sudo chmod 700 get_helm.sh
 sudo ./get_helm.sh
+rm get_helm.sh
 helm version
 
-sleep 30
 
-# Copy the docker-compose.yaml file to the VM
+echo "📁 Creating docker-compose file..."
 cat <<EOT > /home/$USER/docker-compose.yaml
-version: '3.8'
-
 services:
   nexus:
     image: sonatypecommunity/nexus3
@@ -124,16 +136,6 @@ services:
       - postgresql:/var/lib/postgresql/data
     restart: unless-stopped
 
-  artifactory:
-    image: releases-docker.jfrog.io/jfrog/artifactory-pro:latest
-    container_name: artifactory
-    ports:
-      - "8081:8081"
-      - "8082:8082"
-    volumes:
-      - $JFROG_HOME/artifactory/var/:/var/opt/jfrog/artifactory
-    restart: unless-stopped
-
 volumes:
   nexus-data:
   sonarqube-conf:
@@ -143,10 +145,12 @@ volumes:
   postgresql:
 EOT
 
-# Start Docker containers
-sudo docker-compose -f /home/$USER/docker-compose.yaml up -d
-docker-compose -v
-sleep 30
+echo "🚀 Starting DevOps stack containers..."
+sudo docker compose -f /home/$USER/docker-compose.yaml up -d
+sleep 20
+docker ps
 
-sudo chmod 777 /var/run/docker.sock
-docker -v
+echo "✅ CICD environment setup complete."
+echo "🔗 Access Jenkins at: http://<your-server-ip>:8080"
+echo "🔗 Access Nexus at: http://<your-server-ip>:8081"
+echo "🔗 Access SonarQube at: http://<your-server-ip>:9000"
