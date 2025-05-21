@@ -135,6 +135,16 @@ services:
     volumes:
       - postgresql:/var/lib/postgresql/data
     restart: unless-stopped
+  
+  artifactory:
+    image: releases-docker.jfrog.io/jfrog/artifactory-pro:latest
+    container_name: artifactory
+    ports:
+      - "8083:8081"
+      - "8082:8082"
+    volumes:
+      - $JFROG_HOME/artifactory/var/:/var/opt/jfrog/artifactory
+    restart: unless-stopped
 
 volumes:
   nexus-data:
