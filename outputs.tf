@@ -1,6 +1,6 @@
-output "build_server_ip" {
-  value = module.vm-module.build_server_ip
-}
+# output "build_server_ip" {
+#   value = module.vm-module.build_server_ip
+# }
 
 ## EKS-Cluster Requirement  --- Below 
 output "aws_load_balancer_controller_role_arn" {

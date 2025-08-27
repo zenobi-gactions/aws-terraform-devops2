@@ -20,10 +20,10 @@ module "eks" {
   eks_managed_node_groups = {
     public_nodes = {
       name               = "public-node-group"
-      instance_types     = ["m5.large"]
-      desired_size       = 3
-      min_size           = 2
-      max_size           = 5
+      instance_types     = ["t3.large"]
+      desired_size       = 2
+      min_size           = 1
+      max_size           = 3
       capacity_type      = "ON_DEMAND"
       subnet_ids         = var.public_subnet_ids
       security_group_ids = [var.security_group_id]
