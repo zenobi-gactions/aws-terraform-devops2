@@ -21,130 +21,113 @@ resource "helm_release" "grafana" {
   wait             = true
   timeout          = 300
   force_update     = true
-  values = [
-    file("${path.root}/modules/eks-module/kubernetes-yaml-files/grafana-values.yaml"),
-    yamlencode({
-      database = {
-        type   = "mysql"
-        host   = "mysql.monitoring.svc.cluster.local:3306"
-        name   = "grafana"
-        user   = "grafana"
-        password = {
-          secretName = "grafana-secret"
-          secretKey  = "password"
-        }
+values = [
+  file("${path.root}/modules/eks-module/kubernetes-yaml-files/grafana-values.yaml"),
+  yamlencode({
+    database = {
+      type   = "mysql"
+      host   = "mysql.monitoring.svc.cluster.local:3306"
+      name   = "grafana"
+      user   = "grafana"
+      password = {
+        secretName = "grafana-secret"
+        secretKey  = "password"
       }
-      sidecar = {
-        dashboards = {
-          enabled = true
-          label   = "grafana_dashboard"
-        }
+    }
+    sidecar = {
+      dashboards = {
+        enabled = true
+        label   = "grafana_dashboard"
       }
-    })
-  ]
-  set {
+    }
+  })
+]
+set = [
+  {
     name  = "service.type"
     value = "LoadBalancer"
-  }
-
-  set {
+  },
+  {
     name  = "persistence.storageClassName"
     value = "ebs-sc"
-  }
-
-  set {
+  },
+  {
     name  = "image.tag"
     value = "9.5.2"
-  }
- 
-  set {
+  },
+  {
     name  = "persistence.enabled"
     value = "true"
-  }
-
-  set {
+  },
+  {
     name  = "persistence.size"
     value = "8Gi"
-  }
-
-  set {
+  },
+  {
     name  = "persistence.accessModes[0]"
     value = "ReadWriteOnce"
-  }
-
-  set {
+  },
+  {
     name  = "adminPassword"
     value = var.grafana_admin_password
-  }
-
-  set {
+  },
+  {
     name  = "sidecar.dashboards.enabled"
     value = "true"
-  }
-  
-  set {
+  },
+  {
     name  = "sidecar.dashboards.label"
     value = "grafana_dashboard"
-  }
-
-  set {
+  },
+  {
     name  = "resources.requests.memory"
     value = "256Mi"
-  }
-
-  set {
+  },
+  {
     name  = "resources.requests.cpu"
     value = "100m"
-  }
-
-  set {
+  },
+  {
     name  = "resources.limits.memory"
     value = "512Mi"
-  }
-
-  set {
+  },
+  {
     name  = "resources.limits.cpu"
     value = "250m"
-  }
-
-  set {
+  },
+  {
     name  = "plugins[0]"
     value = "grafana-piechart-panel"
-  }
-
-  set {
+  },
+  {
     name  = "datasources.datasources.yaml.apiVersion"
     value = "1"
-  }
-
-  set {
+  },
+  {
     name  = "datasources.datasources.yaml.datasources[0].name"
     value = "prometheus-k8s"
-  }
-
-  set {
+  },
+  {
     name  = "datasources.datasources.yaml.datasources[0].type"
     value = "prometheus"
-  }
-
-  set {
+  },
+  {
     name  = "datasources.datasources.yaml.datasources[0].url"
     value = "http://prometheus-k8s.monitoring.svc:9090"
-  }
-
-  set {
+  },
+  {
     name  = "datasources.datasources.yaml.datasources[0].access"
     value = "proxy"
-  }
-
-  set {
+  },
+  {
     name  = "datasources.datasources.yaml.datasources[0].isDefault"
     value = "true"
-  }
-  set {
+  },
+  {
     name  = "testFramework.enabled"
     value = "false"
   }
+]
   
   depends_on = [
     kubernetes_namespace.monitoring,
