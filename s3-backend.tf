@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
-    bucket = "my-terraform-state85"
-    key    = "environments2"
+    bucket = "amynze-terraform-state"
+    key    = "terraform.tfstate"
     region = "us-east-1"
     #    dynamodb_table = "ndcc-terraform-state-lock-dynamo"
     encrypt = true
